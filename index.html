@@ -1,0 +1,2564 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Scroll • Sarviola</title>
+    <meta name="description" content="Premium Scroll-style video feed with notification bell toggle">
+    <style>
+        /* ============================================================
+               ROOT & RESET
+            ============================================================ */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --bg-primary: #000000;
+            --bg-secondary: #0a0a0a;
+            --bg-card: #121212;
+            --bg-card-hover: #1a1a1a;
+            --border-color: #262626;
+            --border-light: #363636;
+            --text-primary: #f5f5f5;
+            --text-secondary: #a8a8a8;
+            --text-muted: #6b6b6b;
+            --accent: #ffd700;
+            --accent-glow: rgba(255, 215, 0, 0.2);
+            --accent-gradient: linear-gradient(135deg, #ffd700, #ff8c00);
+            --like-color: #ed4956;
+            --shadow: 0 8px 40px rgba(0, 0, 0, 0.8);
+            --radius: 12px;
+            --radius-lg: 20px;
+            --nav-height: 54px;
+            --stories-height: 108px;
+            --header-height: 52px;
+            --transition: 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            --bounce: 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            --notif-top: 70px;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            height: auto;
+            padding-bottom: calc(var(--nav-height) + 24px);
+            overflow-x: hidden;
+            overflow-y: visible;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            position: relative;
+        }
+
+        /* ============================================================
+               SCROLLBAR
+            ============================================================ */
+        ::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+        }
+        * {
+            scrollbar-width: none;
+        }
+
+        /* ============================================================
+               SVG ICON BASE
+            ============================================================ */
+        .icon {
+            width: 24px;
+            height: 24px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: all var(--transition);
+            display: inline-block;
+            vertical-align: middle;
+            flex-shrink: 0;
+            pointer-events: none;
+        }
+
+        .icon-sm {
+            width: 18px;
+            height: 18px;
+        }
+
+        .icon-lg {
+            width: 32px;
+            height: 32px;
+        }
+
+        .icon-xs {
+            width: 14px;
+            height: 14px;
+            stroke-width: 2.5;
+        }
+
+        .icon-fill {
+            fill: currentColor;
+            stroke: none;
+        }
+
+        .icon-heart-fill {
+            fill: var(--like-color);
+            stroke: var(--like-color);
+        }
+
+        .icon-accent {
+            stroke: var(--accent);
+        }
+
+        .icon-accent-fill {
+            fill: var(--accent);
+            stroke: var(--accent);
+        }
+
+        /* ============================================================
+               TOP NAVIGATION
+            ============================================================ */
+        .top-nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.92);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            padding: 10px 18px;
+            border-bottom: 0.5px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: var(--header-height);
+            animation: slideDown 0.5s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.8px;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-family: 'Grand Hotel', cursive, -apple-system, sans-serif;
+            position: relative;
+            user-select: none;
+        }
+
+        .logo::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--accent-gradient);
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform 0.6s ease;
+        }
+
+        .logo:hover::after {
+            transform: scaleX(1);
+            transform-origin: left;
+        }
+
+        .top-nav-actions {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .top-nav-actions .icon-btn {
+            cursor: pointer;
+            transition: all var(--transition);
+            position: relative;
+            background: none;
+            border: none;
+            padding: 4px;
+            line-height: 1;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .top-nav-actions .icon-btn:hover {
+            transform: scale(1.12);
+        }
+
+        .top-nav-actions .icon-btn:active {
+            transform: scale(0.85);
+        }
+
+        .top-nav-actions .icon-btn .badge-dot {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 8px;
+            height: 8px;
+            background: var(--like-color);
+            border-radius: 50%;
+            border: 2px solid #000;
+            animation: pulse-dot 1.5s ease infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%,
+            100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.3);
+            }
+        }
+
+        /* ============================================================
+               NOTIFICATION BELL - TOGGLE PANEL
+            ============================================================ */
+        .bell-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .bell-btn {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition);
+            position: relative;
+        }
+
+        .bell-btn:hover {
+            transform: scale(1.12);
+        }
+
+        .bell-btn:active {
+            transform: scale(0.85);
+        }
+
+        .bell-btn .badge-count {
+            position: absolute;
+            top: -2px;
+            right: -4px;
+            background: var(--like-color);
+            color: #fff;
+            font-size: 0.5rem;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 50%;
+            min-width: 18px;
+            height: 18px;
+            text-align: center;
+            line-height: 18px;
+            border: 2px solid #000;
+            animation: badgePulse 2s ease infinite;
+        }
+
+        .bell-btn .badge-count.hidden {
+            display: none;
+        }
+
+        @keyframes badgePulse {
+            0%,
+            100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        /* Notification Panel */
+        .notification-panel {
+            position: absolute;
+            top: calc(100% + 12px);
+            right: -10px;
+            width: 380px;
+            max-width: 90vw;
+            max-height: 500px;
+            overflow-y: auto;
+            background: rgba(20, 20, 20, 0.96);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 0.5px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+            padding: 16px 0;
+            transform: translateY(-10px) scale(0.95);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 160;
+            transform-origin: top right;
+        }
+
+        .notification-panel.open {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .notification-panel::-webkit-scrollbar {
+            width: 3px;
+        }
+        .notification-panel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .notification-panel::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 10px;
+        }
+
+        .notification-panel .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 16px 12px 16px;
+            border-bottom: 0.5px solid var(--border-color);
+        }
+
+        .notification-panel .panel-header h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .notification-panel .panel-header .mark-read {
+            font-size: 0.7rem;
+            color: #0095f6;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-weight: 500;
+            transition: color var(--transition);
+        }
+
+        .notification-panel .panel-header .mark-read:hover {
+            color: #33a8f7;
+        }
+
+        .notification-panel .notif-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            transition: background var(--transition);
+            cursor: pointer;
+            border-bottom: 0.5px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .notification-panel .notif-item:hover {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .notification-panel .notif-item .notif-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            overflow: hidden;
+            flex-shrink: 0;
+            border: 1px solid var(--border-color);
+        }
+
+        .notification-panel .notif-item .notif-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .notification-panel .notif-item .notif-content {
+            flex: 1;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            color: var(--text-secondary);
+        }
+
+        .notification-panel .notif-item .notif-content strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .notification-panel .notif-item .notif-content .highlight-text {
+            color: #0095f6;
+            cursor: pointer;
+        }
+
+        .notification-panel .notif-item .notif-time {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .notification-panel .notif-item .notif-icon-small {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .notification-panel .notif-item .notif-icon-small .icon {
+            width: 18px;
+            height: 18px;
+        }
+
+        .notification-panel .notif-item.unread {
+            background: rgba(237, 73, 86, 0.06);
+            border-left: 3px solid var(--like-color);
+        }
+
+        .notification-panel .notif-item.unread:hover {
+            background: rgba(237, 73, 86, 0.1);
+        }
+
+        .notification-panel .notif-empty {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .notification-panel .notif-empty .icon {
+            width: 40px;
+            height: 40px;
+            stroke: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        /* Overlay when panel open */
+        .panel-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 155;
+            background: rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .panel-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* ============================================================
+               NOTIFICATION OVERLAY (toast)
+            ============================================================ */
+        .toast-container {
+            position: fixed;
+            top: var(--notif-top);
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 150;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            pointer-events: none;
+            max-width: 90%;
+            width: 400px;
+        }
+
+        .toast-item {
+            background: rgba(20, 20, 20, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 0.5px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.7), 0 0 0 0.5px rgba(255, 255, 255, 0.05);
+            transform: translateY(-20px) scale(0.95);
+            opacity: 0;
+            animation: toastSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            width: 100%;
+            pointer-events: auto;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .toast-item .toast-icon {
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toast-item .toast-icon .icon {
+            width: 22px;
+            height: 22px;
+            stroke-width: 2;
+        }
+
+        .toast-item .toast-icon .icon-heart-toast {
+            fill: var(--like-color);
+            stroke: var(--like-color);
+        }
+
+        .toast-item .toast-icon .icon-bookmark-toast {
+            fill: var(--accent);
+            stroke: var(--accent);
+        }
+
+        .toast-item .toast-icon .icon-check-toast {
+            stroke: #4caf50;
+        }
+
+        .toast-item .toast-icon .icon-share-toast {
+            stroke: #0095f6;
+        }
+
+        .toast-item .toast-icon .icon-story-toast {
+            stroke: #f09433;
+        }
+
+        .toast-item .toast-text {
+            flex: 1;
+            line-height: 1.4;
+        }
+
+        .toast-item .toast-text .highlight {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        @keyframes toastSlideIn {
+            0% {
+                transform: translateY(-30px) scale(0.9);
+                opacity: 0;
+            }
+            100% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        .toast-item.removing {
+            animation: toastSlideOut 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        @keyframes toastSlideOut {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-30px) scale(0.9);
+                opacity: 0;
+            }
+        }
+
+        /* ============================================================
+               STORIES BAR
+            ============================================================ */
+        .stories-container {
+            padding: 12px 16px 10px 16px;
+            border-bottom: 0.5px solid var(--border-color);
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+            background: var(--bg-secondary);
+            position: relative;
+            height: var(--stories-height);
+            display: flex;
+            align-items: center;
+            animation: fadeIn 0.6s ease 0.1s both;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+            touch-action: pan-x;
+        }
+
+        .stories-container::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 0;
+            height: 100%;
+            width: 30px;
+            background: linear-gradient(to right, transparent, var(--bg-secondary));
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .story-item {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            margin-right: 16px;
+            cursor: pointer;
+            transition: all var(--transition);
+            flex-shrink: 0;
+            position: relative;
+            touch-action: manipulation;
+        }
+
+        .story-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .story-item:active {
+            transform: scale(0.92);
+        }
+
+        .story-avatar {
+            width: 66px;
+            height: 66px;
+            border-radius: 50%;
+            padding: 3px;
+            background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+            background-size: 300% 300%;
+            animation: storyGradient 4s ease infinite;
+            position: relative;
+            transition: all var(--transition);
+        }
+
+        .story-avatar::after {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: 50%;
+            padding: 2px;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        @keyframes storyGradient {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .story-avatar .avatar-img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid var(--bg-secondary);
+            object-fit: cover;
+            transition: all var(--transition);
+        }
+
+        .story-item.seen .story-avatar {
+            background: var(--border-color);
+        }
+
+        .story-item.seen .story-avatar .avatar-img {
+            border-color: var(--border-color);
+        }
+
+        .story-name {
+            font-size: 0.55rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            max-width: 66px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            text-align: center;
+            font-weight: 400;
+            user-select: none;
+        }
+
+        .story-item:first-child .story-avatar {
+            background: linear-gradient(45deg, #405de6, #5851db, #833ab4, #c13584, #e1306c, #fd1d1d);
+        }
+
+        .story-item:first-child .story-name {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        /* ============================================================
+               VIDEO GRID
+            ============================================================ */
+        .video-grid {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0 0 4px 0;
+            position: relative;
+        }
+
+        /* ============================================================
+               VIDEO CARD
+            ============================================================ */
+        .video-instance {
+            background: var(--bg-card);
+            margin-bottom: 12px;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            border: 0.5px solid var(--border-color);
+            transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+            animation: cardFadeUp 0.6s ease forwards;
+            opacity: 0;
+            transform: translateY(30px) scale(0.98);
+            position: relative;
+        }
+
+        @keyframes cardFadeUp {
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .video-instance:nth-child(1) {
+            animation-delay: 0.05s;
+        }
+        .video-instance:nth-child(2) {
+            animation-delay: 0.10s;
+        }
+        .video-instance:nth-child(3) {
+            animation-delay: 0.15s;
+        }
+        .video-instance:nth-child(4) {
+            animation-delay: 0.20s;
+        }
+        .video-instance:nth-child(5) {
+            animation-delay: 0.25s;
+        }
+        .video-instance:nth-child(6) {
+            animation-delay: 0.30s;
+        }
+        .video-instance:nth-child(7) {
+            animation-delay: 0.35s;
+        }
+        .video-instance:nth-child(8) {
+            animation-delay: 0.40s;
+        }
+        .video-instance:nth-child(9) {
+            animation-delay: 0.45s;
+        }
+        .video-instance:nth-child(10) {
+            animation-delay: 0.50s;
+        }
+
+        .video-instance:hover {
+            border-color: var(--border-light);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
+        }
+
+        .video-instance.playing {
+            border-color: var(--accent);
+            box-shadow: 0 0 50px var(--accent-glow), inset 0 0 30px var(--accent-glow);
+            transform: scale(1.005);
+        }
+
+        /* ===== CARD HEADER ===== */
+        .video-header {
+            display: flex;
+            align-items: center;
+            padding: 10px 14px;
+            gap: 10px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .video-header .avatar-sm {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            transition: all var(--transition);
+        }
+
+        .video-header .avatar-sm:hover {
+            transform: scale(1.05);
+            border-color: var(--accent);
+        }
+
+        .video-header .avatar-sm img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-header .username {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: color var(--transition);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .video-header .username:hover {
+            color: var(--accent);
+        }
+
+        .video-header .location {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            margin-left: 4px;
+        }
+
+        .video-header .more-btn {
+            margin-left: auto;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 8px;
+            transition: all var(--transition);
+            background: none;
+            border: none;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-header .more-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        /* ===== VIDEO WRAPPER ===== */
+        .video-wrapper {
+            position: relative;
+            background: #000;
+            aspect-ratio: 1 / 1;
+            cursor: pointer;
+            overflow: hidden;
+            touch-action: pan-y !important;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        .video-wrapper video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            background: #0a0a0a;
+            pointer-events: none;
+            touch-action: none;
+        }
+
+        /* ===== PROGRESS BAR ===== */
+        .video-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.15);
+            z-index: 5;
+            border-radius: 0 0 0 0;
+            pointer-events: none;
+        }
+
+        .video-progress .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--accent-gradient);
+            transition: width 0.15s linear;
+            border-radius: 0 2px 2px 0;
+            box-shadow: 0 0 12px var(--accent-glow);
+            position: relative;
+        }
+
+        .video-progress .progress-fill::after {
+            content: '';
+            position: absolute;
+            right: -4px;
+            top: -4px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--accent);
+            opacity: 0;
+            transition: opacity 0.3s;
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .video-wrapper:hover .progress-fill::after {
+            opacity: 1;
+        }
+
+        /* ===== PLAY INDICATOR ===== */
+        .play-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: none;
+            z-index: 4;
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .play-indicator .icon {
+            width: 48px;
+            height: 48px;
+            stroke: white;
+            fill: rgba(255, 255, 255, 0.15);
+            stroke-width: 1.5;
+        }
+
+        .play-indicator.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .play-indicator.pulse {
+            animation: indicatorPulse 0.6s ease;
+        }
+
+        @keyframes indicatorPulse {
+            0% {
+                transform: translate(-50%, -50%) scale(0.5);
+                opacity: 0;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.3);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* ===== GRADIENT OVERLAY ===== */
+        .video-wrapper::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40%;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.4), transparent);
+            pointer-events: none;
+            z-index: 2;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .video-wrapper:hover::after {
+            opacity: 1;
+        }
+
+        /* ===== CLICK CAPTURE ===== */
+        .click-capture {
+            position: absolute;
+            inset: 0;
+            z-index: 6;
+            cursor: pointer;
+            pointer-events: auto;
+            touch-action: pan-y !important;
+        }
+
+        /* ============================================================
+               VIDEO ACTIONS
+            ============================================================ */
+        .video-actions {
+            display: flex;
+            align-items: center;
+            padding: 6px 14px 2px 14px;
+            gap: 14px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .video-actions .action-btn {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 0;
+            position: relative;
+            line-height: 1;
+            touch-action: manipulation;
+        }
+
+        .video-actions .action-btn:hover {
+            transform: scale(1.12);
+        }
+
+        .video-actions .action-btn:active {
+            transform: scale(0.85);
+        }
+
+        .video-actions .action-btn .count {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-left: 2px;
+            transition: color var(--transition);
+            user-select: none;
+        }
+
+        /* Like Button */
+        .video-actions .like-btn {
+            color: var(--text-primary);
+            transition: all var(--transition);
+        }
+
+        .video-actions .like-btn.liked {
+            color: var(--like-color);
+        }
+
+        .video-actions .like-btn.liked .count {
+            color: var(--like-color);
+        }
+
+        .video-actions .like-btn.liked .icon-heart {
+            fill: var(--like-color);
+            stroke: var(--like-color);
+        }
+
+        .video-actions .like-btn .icon-heart {
+            transition: all var(--transition);
+        }
+
+        .video-actions .like-btn.liked {
+            animation: likePop 0.5s var(--bounce);
+        }
+
+        .video-actions .like-btn.unliked {
+            animation: unlikePop 0.3s ease;
+        }
+
+        @keyframes likePop {
+            0% {
+                transform: scale(1);
+            }
+            30% {
+                transform: scale(1.5);
+            }
+            60% {
+                transform: scale(0.9);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes unlikePop {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(0.8);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .video-actions .action-spacer {
+            flex: 1;
+        }
+
+        .video-actions .bookmark-btn {
+            color: var(--text-secondary);
+            transition: all var(--transition);
+        }
+
+        .video-actions .bookmark-btn.bookmarked {
+            color: var(--accent);
+            animation: bookmarkPop 0.4s var(--bounce);
+        }
+
+        .video-actions .bookmark-btn.bookmarked .icon-bookmark {
+            fill: var(--accent);
+            stroke: var(--accent);
+        }
+
+        .video-actions .comment-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        @keyframes bookmarkPop {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.3) rotate(-10deg);
+            }
+            100% {
+                transform: scale(1) rotate(0);
+            }
+        }
+
+        /* ============================================================
+               CAPTION & TIMESTAMP - PURE TEXT
+            ============================================================ */
+        .video-caption {
+            padding: 2px 14px 2px 14px;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: var(--text-primary);
+            position: relative;
+            z-index: 2;
+        }
+
+        .video-caption .username-inline {
+            font-weight: 600;
+            margin-right: 4px;
+            cursor: pointer;
+            transition: color var(--transition);
+        }
+
+        .video-caption .username-inline:hover {
+            color: var(--accent);
+        }
+
+        .video-caption .hashtag {
+            color: #0095f6;
+            cursor: pointer;
+            transition: color var(--transition);
+        }
+
+        .video-caption .hashtag:hover {
+            color: #33a8f7;
+            text-decoration: underline;
+        }
+
+        .video-caption .mention {
+            color: #0095f6;
+            cursor: pointer;
+        }
+
+        .video-timestamp {
+            padding: 2px 14px 12px 14px;
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* ============================================================
+               BOTTOM NAVIGATION
+            ============================================================ */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: var(--nav-height);
+            background: rgba(0, 0, 0, 0.92);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-top: 0.5px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0 6px;
+            z-index: 200;
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .bottom-nav .nav-item {
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all var(--transition);
+            padding: 6px 12px;
+            position: relative;
+            border-radius: 8px;
+            background: none;
+            border: none;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+        }
+
+        .bottom-nav .nav-item:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .bottom-nav .nav-item:active {
+            transform: scale(0.85);
+        }
+
+        .bottom-nav .nav-item.active {
+            color: var(--text-primary);
+        }
+
+        .bottom-nav .nav-item .badge {
+            position: absolute;
+            top: 0;
+            right: 2px;
+            background: var(--like-color);
+            color: #fff;
+            font-size: 0.5rem;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 50%;
+            min-width: 18px;
+            height: 18px;
+            text-align: center;
+            line-height: 18px;
+            border: 2px solid #000;
+            animation: badgePulse 2s ease infinite;
+        }
+
+        .bottom-nav .nav-item .profile-pic {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            transition: all var(--transition);
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .bottom-nav .nav-item .profile-pic img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .bottom-nav .nav-item.active .profile-pic {
+            border-color: var(--accent);
+        }
+
+        /* ============================================================
+               HEART BURST ANIMATION
+            ============================================================ */
+        .heart-burst {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            pointer-events: none;
+            z-index: 10;
+            animation: heartBurst 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            filter: drop-shadow(0 8px 30px rgba(237, 73, 86, 0.5));
+        }
+
+        .heart-burst .icon {
+            width: 64px;
+            height: 64px;
+            fill: var(--like-color);
+            stroke: var(--like-color);
+            stroke-width: 1;
+        }
+
+        @keyframes heartBurst {
+            0% {
+                transform: translate(-50%, -50%) scale(0) rotate(-20deg);
+                opacity: 1;
+            }
+            30% {
+                transform: translate(-50%, -50%) scale(1.8) rotate(5deg);
+                opacity: 1;
+            }
+            60% {
+                transform: translate(-50%, -50%) scale(1.2) rotate(-5deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1.5) rotate(0deg);
+                opacity: 0;
+            }
+        }
+
+        /* Heart shrink animation for unlike */
+        .heart-shrink {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(1);
+            pointer-events: none;
+            z-index: 10;
+            animation: heartShrink 0.4s ease forwards;
+        }
+
+        .heart-shrink .icon {
+            width: 48px;
+            height: 48px;
+            fill: var(--like-color);
+            stroke: var(--like-color);
+            stroke-width: 1;
+            opacity: 0.6;
+        }
+
+        @keyframes heartShrink {
+            0% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(0.3);
+                opacity: 0;
+            }
+        }
+
+        /* ============================================================
+               RESPONSIVE
+            ============================================================ */
+        @media (max-width: 480px) {
+            .toast-container {
+                top: 60px;
+                width: 92%;
+                max-width: 92%;
+            }
+            .toast-item {
+                padding: 10px 16px;
+                font-size: 0.8rem;
+            }
+            .toast-item .toast-icon .icon {
+                width: 18px;
+                height: 18px;
+            }
+            .notification-panel {
+                width: 92vw;
+                right: -5px;
+                max-height: 400px;
+            }
+            .story-avatar {
+                width: 56px;
+                height: 56px;
+            }
+            .story-name {
+                font-size: 0.5rem;
+                max-width: 56px;
+            }
+            .video-actions .action-btn .icon {
+                width: 20px;
+                height: 20px;
+            }
+            .video-actions .action-btn .count {
+                font-size: 0.7rem;
+            }
+            .video-caption {
+                font-size: 0.8rem;
+            }
+            .logo {
+                font-size: 1.3rem;
+            }
+            .top-nav-actions {
+                gap: 12px;
+            }
+            .top-nav-actions .icon-btn .icon {
+                width: 20px;
+                height: 20px;
+            }
+            .bottom-nav .nav-item .icon {
+                width: 20px;
+                height: 20px;
+            }
+            .bottom-nav .nav-item {
+                padding: 4px 8px;
+            }
+            .video-instance {
+                border-radius: 0;
+                margin-bottom: 8px;
+            }
+            .video-header {
+                padding: 8px 12px;
+            }
+            .video-actions {
+                padding: 4px 12px 0 12px;
+                gap: 12px;
+            }
+            .video-caption {
+                padding: 0 12px 2px 12px;
+            }
+            .video-timestamp {
+                padding: 0 12px 10px 12px;
+            }
+            .heart-burst .icon {
+                width: 48px;
+                height: 48px;
+            }
+            .play-indicator .icon {
+                width: 40px;
+                height: 40px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .toast-container {
+                top: 55px;
+            }
+            .toast-item {
+                padding: 8px 14px;
+                font-size: 0.75rem;
+            }
+            .notification-panel {
+                max-height: 350px;
+            }
+            .story-avatar {
+                width: 48px;
+                height: 48px;
+            }
+            .story-name {
+                font-size: 0.45rem;
+                max-width: 48px;
+            }
+            .video-actions .action-btn .icon {
+                width: 18px;
+                height: 18px;
+            }
+            .video-actions .action-btn .count {
+                font-size: 0.6rem;
+            }
+            .video-caption {
+                font-size: 0.7rem;
+            }
+            .logo {
+                font-size: 1.1rem;
+            }
+        }
+
+        @media (min-width: 641px) {
+            .video-grid {
+                padding: 0 16px;
+            }
+            .video-instance {
+                border-radius: var(--radius-lg);
+                margin-bottom: 20px;
+            }
+            .video-instance:hover {
+                transform: translateY(-4px);
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .video-grid {
+                max-width: 600px;
+            }
+            body {
+                padding-bottom: calc(var(--nav-height) + 32px);
+            }
+        }
+
+        /* ============================================================
+               UTILITY & ANIMATIONS
+            ============================================================ */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+            100% {
+                background-position: 200% 0;
+            }
+        }
+
+        .shimmer-loading {
+            background: linear-gradient(90deg, var(--bg-card) 25%, var(--border-color) 50%, var(--bg-card) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s ease infinite;
+        }
+
+        .video-instance.playing .video-wrapper {
+            box-shadow: inset 0 0 60px rgba(255, 215, 0, 0.05);
+        }
+
+        .stories-container {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .stories-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .video-wrapper .loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+        }
+
+        .video-wrapper .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .video-wrapper .loading-overlay .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Disabled state for comment button */
+        .action-btn.clicked {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .action-btn.clicked .icon {
+            opacity: 0.5;
+        }
+
+        .action-btn.clicked .count {
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== TOAST CONTAINER ===== -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- ===== PANEL OVERLAY ===== -->
+    <div class="panel-overlay" id="panelOverlay"></div>
+
+    <!-- ===== TOP NAVIGATION ===== -->
+    <nav class="top-nav">
+        <div class="logo">Scroll</div>
+        <div class="top-nav-actions">
+            <button class="icon-btn" aria-label="Tambah" title="Tambah" id="btnAdd">
+                <svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+            <button class="icon-btn" aria-label="Pesan" title="Pesan" id="btnMessage">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </button>
+            <!-- BELL BUTTON with Toggle -->
+            <div class="bell-container" id="bellContainer">
+                <button class="bell-btn" id="bellBtn" aria-label="Notifikasi">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    <span class="badge-count" id="bellBadge">5</span>
+                </button>
+
+                <!-- NOTIFICATION PANEL -->
+                <div class="notification-panel" id="notificationPanel">
+                    <div class="panel-header">
+                        <h3>Notifikasi</h3>
+                        <button class="mark-read" id="markRead">Tandai semua sudah dibaca</button>
+                    </div>
+                    <div id="notifList">
+                        <!-- Akan diisi JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ===== STORIES ===== -->
+    <div class="stories-container" id="storiesContainer"></div>
+
+    <!-- ===== VIDEO GRID ===== -->
+    <div class="video-grid" id="videoGrid"></div>
+
+    <!-- ===== BOTTOM NAVIGATION ===== -->
+    <nav class="bottom-nav">
+        <button class="nav-item active" aria-label="Beranda" data-nav="Beranda">
+            <svg class="icon icon-fill" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1"/></svg>
+        </button>
+        <button class="nav-item" aria-label="Cari" data-nav="Cari">
+            <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+        <button class="nav-item" aria-label="Unggah" data-nav="Unggah DiNonAktif">
+            <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        </button>
+        <button class="nav-item" aria-label="Aktivitas" data-nav="Aktivitas">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <span class="badge">5</span>
+        </button>
+        <button class="nav-item" aria-label="Profil" data-nav="Profil DiNonAktif">
+            <span class="profile-pic">
+                <img src="https://i.pravatar.cc/150?img=1" alt="Profil">
+            </span>
+        </button>
+    </nav>
+
+    <script>
+        // ================================================================
+        // 1. STORAGE KEYS
+        // ================================================================
+        const STORAGE_KEYS = {
+            LIKES: 'Scroll_likes_state',
+            COMMENTS: 'Scroll_comments_state',
+            LIKED: 'Scroll_liked_state',
+            COMMENTED: 'Scroll_commented_state',
+            BELL_OPEN: 'Scroll_bell_open'
+        };
+
+        // ================================================================
+        // 2. PERSISTENCE HELPERS
+        // ================================================================
+        function getPersistedData(key, defaultValue) {
+            try {
+                const data = localStorage.getItem(key);
+                if (data) {
+                    return JSON.parse(data);
+                }
+                return defaultValue;
+            } catch (e) {
+                return defaultValue;
+            }
+        }
+
+        function setPersistedData(key, data) {
+            try {
+                localStorage.setItem(key, JSON.stringify(data));
+            } catch (e) {
+                // Ignore
+            }
+        }
+
+        // ================================================================
+        // 3. TOAST NOTIFICATION SYSTEM
+        // ================================================================
+        const toastContainer = document.getElementById('toastContainer');
+
+        function showToast(message, iconType = 'check', highlight = '') {
+            const icons = {
+                heart: `<svg class="icon icon-heart-toast" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="currentColor"/></svg>`,
+                heart_unlike: `<svg class="icon" viewBox="0 0 24 24" stroke="#a8a8a8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
+                bookmark: `<svg class="icon icon-bookmark-toast" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" fill="currentColor"/></svg>`,
+                check: `<svg class="icon icon-check-toast" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+                share: `<svg class="icon icon-share-toast" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`,
+                story: `<svg class="icon icon-story-toast" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+                comment: `<svg class="icon" viewBox="0 0 24 24" stroke="#0095f6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+                plus: `<svg class="icon" viewBox="0 0 24 24" stroke="#4caf50"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+                home: `<svg class="icon icon-fill" viewBox="0 0 24 24" stroke="#ffd700"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1"/></svg>`,
+                search: `<svg class="icon" viewBox="0 0 24 24" stroke="#0095f6"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
+                profile: `<svg class="icon" viewBox="0 0 24 24" stroke="#f09433"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+                bell: `<svg class="icon" viewBox="0 0 24 24" stroke="#ffd700"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`
+            };
+
+            const iconSvg = icons[iconType] || icons.check;
+            let messageHtml = message;
+            if (highlight) {
+                messageHtml = message.replace(highlight, `<span class="highlight">${highlight}</span>`);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = 'toast-item';
+            toast.innerHTML = `
+                        <div class="toast-icon">${iconSvg}</div>
+                        <span class="toast-text">${messageHtml}</span>
+                    `;
+
+            toastContainer.appendChild(toast);
+
+            const removeTimeout = setTimeout(() => {
+                toast.classList.add('removing');
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.remove();
+                    }
+                }, 400);
+            }, 2500);
+
+            toast._removeTimeout = removeTimeout;
+
+            const items = toastContainer.querySelectorAll('.toast-item');
+            if (items.length > 5) {
+                const oldest = items[0];
+                if (oldest._removeTimeout) {
+                    clearTimeout(oldest._removeTimeout);
+                }
+                oldest.remove();
+            }
+
+            return toast;
+        }
+
+        // ================================================================
+        // 4. NOTIFICATION PANEL - BELL TOGGLE
+        // ================================================================
+        const bellBtn = document.getElementById('bellBtn');
+        const bellBadge = document.getElementById('bellBadge');
+        const panel = document.getElementById('notificationPanel');
+        const overlay = document.getElementById('panelOverlay');
+        const notifList = document.getElementById('notifList');
+        const markReadBtn = document.getElementById('markRead');
+
+        // Load bell state
+        let isPanelOpen = getPersistedData(STORAGE_KEYS.BELL_OPEN, false);
+
+        // Notification data
+        let notifications = [{
+            id: 1,
+            type: 'comment',
+            username: 'EBXU',
+            message: 'berkomentar : "Selamat Datang"',
+            time: '28 Agu 2026',
+            avatar: 'https://i.pravatar.cc/150?img=1',
+            unread: true
+        }, {
+            id: 2,
+            type: 'comment',
+            username: 'EBXU',
+            message: 'berkomentar : "seluruh video yang di channel akan masuk ke sini"',
+            time: '28 Agu 2026',
+            avatar: 'https://i.pravatar.cc/150?img=1',
+            unread: true
+        }, {
+            id: 3,
+            type: 'comment',
+            username: 'EBXU',
+            message: 'berkomentar : "jangan lupa follow channel EBXU"',
+            time: '28 Agu 2026',
+            avatar: 'https://i.pravatar.cc/150?img=1',
+            unread: true
+        }, {
+            id: 4,
+            type: 'comment',
+            username: 'EBXU',
+            message: 'berkomentar: "WOKE"',
+            time: '28 Agu 2026',
+            avatar: 'https://i.pravatar.cc/150?img=1',
+            unread: true
+        }];
+
+        function updateBadge() {
+            const unreadCount = notifications.filter(n => n.unread).length;
+            if (unreadCount > 0) {
+                bellBadge.textContent = unreadCount;
+                bellBadge.classList.remove('hidden');
+            } else {
+                bellBadge.classList.add('hidden');
+            }
+        }
+
+        function renderNotifications() {
+            const unreadCount = notifications.filter(n => n.unread).length;
+
+            if (notifications.length === 0) {
+                notifList.innerHTML = `
+                            <div class="notif-empty">
+                                <svg class="icon" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                                <div>Tidak ada notifikasi</div>
+                            </div>
+                        `;
+                return;
+            }
+
+            notifList.innerHTML = notifications.map(n => `
+                        <div class="notif-item ${n.unread ? 'unread' : ''}" data-id="${n.id}">
+                            <div class="notif-avatar">
+                                <img src="${n.avatar}" alt="${n.username}">
+                            </div>
+                            <div class="notif-content">
+                                <strong>${n.username}</strong> ${n.message}
+                            </div>
+                            <div class="notif-time">${n.time}</div>
+                        </div>
+                    `).join('');
+
+            // Click to mark as read
+            notifList.querySelectorAll('.notif-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const id = parseInt(this.dataset.id);
+                    const notif = notifications.find(n => n.id === id);
+                    if (notif && notif.unread) {
+                        notif.unread = false;
+                        this.classList.remove('unread');
+                        updateBadge();
+                        showToast('Notifikasi dibaca', 'check');
+                    }
+                });
+            });
+        }
+
+        function togglePanel() {
+            isPanelOpen = !isPanelOpen;
+            setPersistedData(STORAGE_KEYS.BELL_OPEN, isPanelOpen);
+
+            if (isPanelOpen) {
+                panel.classList.add('open');
+                overlay.classList.add('show');
+                // Mark all as read when opened (optional)
+                // Uncomment below to auto-mark read
+                // markAllAsRead();
+            } else {
+                panel.classList.remove('open');
+                overlay.classList.remove('show');
+            }
+        }
+
+        function markAllAsRead() {
+            notifications.forEach(n => n.unread = false);
+            renderNotifications();
+            updateBadge();
+            showToast('Semua notifikasi telah dibaca', 'check');
+        }
+
+        // Bell button click - toggle
+        bellBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            togglePanel();
+        });
+
+        // Overlay click - close
+        overlay.addEventListener('click', function() {
+            if (isPanelOpen) {
+                togglePanel();
+            }
+        });
+
+        // Mark all as read
+        markReadBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            markAllAsRead();
+        });
+
+        // Close on escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && isPanelOpen) {
+                togglePanel();
+            }
+        });
+
+        // Close on scroll
+        document.addEventListener('scroll', function() {
+            if (isPanelOpen) {
+                // Optionally close on scroll
+                // togglePanel();
+            }
+        });
+
+        // ================================================================
+        // 5. LIBRARY VIDEO // ================================================================
+        const videoLibrary = [{
+            id: 'v1',
+            src: '@apiipini_1787918349396.mp4',
+            poster: 'https://images.unsplash.com/photo-1492691523567-6170f0275df1?q=80&w=1000&auto=format&fit=crop',
+            caption: 'No Caption...',
+            username: 'EBXU',
+            location: 'Tiktok',
+            likes: 0,
+            comments: 0,
+            avatar: 'https://i.pravatar.cc/150?img=1'
+        }, {
+            id: 'v2',
+            src: '@fwhyyy_1787918303030.mp4',
+            poster: 'https://images.unsplash.com/photo-1492691523567-6170f0275df1?q=80&w=1000&auto=format&fit=crop',
+            caption: 'No Caption...',
+            username: 'EBXU',
+            location: 'Tiktok',
+            likes: 0,
+            comments: 0,
+            avatar: 'https://i.pravatar.cc/150?img=1'
+        }, {
+            id: 'v3',
+            src: '',
+            poster: 'https://images.unsplash.com/photo-1492691523567-6170f0275df1?q=80&w=1000&auto=format&fit=crop',
+            caption: 'No Caption...',
+            username: 'EXBU',
+            location: 'Tiktok',
+            likes: 0,
+            comments: 0,
+            avatar: 'https://i.pravatar.cc/150?img=1'
+        }, {
+            id: 'v4',
+            src: '',
+            poster: 'https://images.unsplash.com/photo-1492691523567-6170f0275df1?q=80&w=1000&auto=format&fit=crop',
+            caption: 'No Caption...',
+            username: 'EBXU',
+            location: 'Tiktok',
+            likes: 0,
+            comments: 0,
+            avatar: 'https://i.pravatar.cc/150?img=1'
+        }, {
+            id: 'v5',
+            src: '',
+            poster: 'https://images.unsplash.com/photo-1492691523567-6170f0275df1?q=80&w=1000&auto=format&fit=crop',
+            caption: 'No Caption...',
+            username: 'EBXU',
+            location: 'Tiktok',
+            likes: 0,
+            comments: 0,
+            avatar: 'https://i.pravatar.cc/150?img=1'
+        }, {
+            id: 'v6',
+            src: '',
+            poster: 'https://images.unsplash.com/photo-1492691523567-6170f0275df1?q=80&w=1000&auto=format&fit=crop',
+            caption: 'No Caption...',
+            username: 'EBXU',
+            location: 'Tiktok',
+            likes: 0,
+            comments: 0,
+            avatar: 'https://i.pravatar.cc/150?img=1'
+        }, {
+            id: 'v7',
+            src: '',
+            poster: 'https://images.unsplash.com/photo-1492691523567-6170f0275df1?q=80&w=1000&auto=format&fit=crop',
+            caption: 'No Caption...',
+            username: 'EBXU',
+            location: 'Tiktok',
+            likes: 0,
+            comments: 0,
+            avatar: 'https://i.pravatar.cc/150?img=1'
+        }, {
+            id: 'v8',
+            src: '',
+            poster: 'https://images.unsplash.com/photo-1492691523567-6170f0275df1?q=80&w=1000&auto=format&fit=crop',
+            caption: 'No Caption...',
+            username: 'EBXU',
+            location: 'Tiktok',
+            likes: 0,
+            comments: 0,
+            avatar: 'https://i.pravatar.cc/150?img=1'
+        }, {
+            id: 'v9',
+            src: '',
+            poster: 'https://images.unsplash.com/photo-1492691523567-6170f0275df1?q=80&w=1000&auto=format&fit=crop',
+            caption: 'No Caption...',
+            username: 'EBXU',
+            location: 'Tiktok',
+            likes: 0,
+            comments: 0,
+            avatar: 'https://i.pravatar.cc/150?img=1'
+        }, {
+            id: 'v10',
+            src: '',
+            poster: 'https://images.unsplash.com/photo-1492691523567-6170f0275df1?q=80&w=1000&auto=format&fit=crop',
+            caption: 'No Caption...',
+            username: 'EBXU',
+            location: 'Tiktok',
+            likes: 0,
+            comments: 0,
+            avatar: 'https://i.pravatar.cc/150?img=1'
+        }];
+
+        // ================================================================
+        // 6. STORIES DATA
+        // ================================================================
+        const storiesData = [
+            { name: 'EBXU', img: 'https://i.pravatar.cc/150?img=1', seen: false },
+            { name: 'NONAKTIF', img: 'https://i.pravatar.cc/150?img=31', seen: true },
+            { name: 'NONAKTIF', img: 'https://i.pravatar.cc/150?img=33', seen: true },
+            { name: 'NONAKTIF', img: 'https://i.pravatar.cc/150?img=38', seen: true },
+            { name: 'NONAKTIF', img: 'https://i.pravatar.cc/150?img=39', seen: true },
+            { name: 'NONAKTIF', img: 'https://i.pravatar.cc/150?img=40', seen: true },
+            { name: 'NONAKTIF', img: 'https://i.pravatar.cc/150?img=41', seen: true },
+            { name: 'NONAKTIF', img: 'https://i.pravatar.cc/150?img=45', seen: true },
+            { name: 'NONAKTIF', img: 'https://i.pravatar.cc/150?img=43', seen: true },
+            { name: 'NONAKTIF', img: 'https://i.pravatar.cc/150?img=47', seen: true },
+            { name: 'NONAKTIF', img: 'https://i.pravatar.cc/150?img=48', seen: true },
+        ];
+
+        // ================================================================
+        // 7. STATE
+        // ================================================================
+        let currentPlaying = null;
+
+        const persistedLikes = getPersistedData(STORAGE_KEYS.LIKES, {});
+        const persistedComments = getPersistedData(STORAGE_KEYS.COMMENTS, {});
+        const persistedLiked = getPersistedData(STORAGE_KEYS.LIKED, {});
+        const persistedCommented = getPersistedData(STORAGE_KEYS.COMMENTED, {});
+
+        let likeStates = {};
+        let commentStates = {};
+
+        // ================================================================
+        // 8. RENDER STORIES
+        // ================================================================
+        function renderStories() {
+            const container = document.getElementById('storiesContainer');
+            container.innerHTML = storiesData.map((story, i) => `
+                        <div class="story-item ${story.seen ? 'seen' : ''}" data-index="${i}" data-name="${story.name}">
+                            <div class="story-avatar">
+                                <img class="avatar-img" src="${story.img}" alt="${story.name}" loading="lazy">
+                            </div>
+                            <span class="story-name">${i === 0 ? 'EBXU' : story.name}</span>
+                        </div>
+                    `).join('');
+
+            container.querySelectorAll('.story-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    this.classList.add('seen');
+                    const name = this.dataset.name || 'story';
+                    showToast(`Sudah Menonton story ${name}`, 'story', name);
+                });
+            });
+        }
+
+        // ================================================================
+        // 9. RENDER VIDEO CARDS
+        // ================================================================
+        function renderVideos() {
+            const grid = document.getElementById('videoGrid');
+            grid.innerHTML = '';
+
+            videoLibrary.forEach((video, index) => {
+                const videoId = video.id;
+                const savedLikes = persistedLikes[videoId] || 0;
+                const savedComments = persistedComments[videoId] || 0;
+                const isLiked = persistedLiked[videoId] || false;
+                const isCommented = persistedCommented[videoId] || false;
+
+                likeStates[videoId] = {
+                    liked: isLiked,
+                    likes: savedLikes
+                };
+
+                commentStates[videoId] = {
+                    commented: isCommented,
+                    comments: savedComments
+                };
+
+                const card = document.createElement('div');
+                card.className = 'video-instance';
+                card.dataset.id = videoId;
+                card.style.animationDelay = `${(index * 0.06)}s`;
+
+                const likeIconClass = isLiked ? 'liked' : '';
+                const likeIconFill = isLiked ? 'fill="currentColor"' : '';
+                const commentDisabled = isCommented ? 'clicked' : '';
+
+                card.innerHTML = `
+                            <div class="video-header">
+                                <div class="avatar-sm">
+                                    <img src="${video.avatar}" alt="${video.username}" loading="lazy">
+                                </div>
+                                <span class="username">${video.username}</span>
+                                ${video.location ? `<span class="location">• ${video.location}</span>` : ''}
+                                <button class="more-btn" aria-label="Lainnya">
+                                    <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                                </button>
+                            </div>
+
+                            <div class="video-wrapper" data-id="${videoId}">
+                                <div class="loading-overlay" id="loading-${videoId}">
+                                    <div class="spinner"></div>
+                                </div>
+                                <video 
+                                    id="${videoId}" 
+                                    src="${video.src}" 
+                                    poster="${video.poster}" 
+                                    playsinline
+                                    preload="metadata"
+                                    muted
+                                ></video>
+                                <div class="video-progress">
+                                    <div class="progress-fill" id="progress-${videoId}"></div>
+                                </div>
+                                <div class="play-indicator" id="indicator-${videoId}">
+                                    <svg class="icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                </div>
+                                <div class="click-capture" data-id="${videoId}"></div>
+                            </div>
+
+                            <div class="video-actions">
+                                <button class="action-btn like-btn ${likeIconClass}" data-id="${videoId}" aria-label="Suka">
+                                    <svg class="icon icon-heart" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" ${likeIconFill}/></svg>
+                                    <span class="count" id="count-${videoId}">${savedLikes}</span>
+                                </button>
+                                <button class="action-btn comment-btn ${commentDisabled}" data-id="${videoId}" aria-label="Komentar" ${isCommented ? 'disabled' : ''}>
+                                    <svg class="icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                    <span class="count" id="comment-count-${videoId}">${savedComments}</span>
+                                </button>
+                                <button class="action-btn share-btn" aria-label="Bagikan">
+                                    <svg class="icon" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                                </button>
+                                <span class="action-spacer"></span>
+                                <button class="action-btn bookmark-btn" data-id="${videoId}" aria-label="Simpan">
+                                    <svg class="icon icon-bookmark" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                                </button>
+                            </div>
+
+                            <div class="video-caption">
+                                <span class="username-inline">${video.username}</span>
+                                ${video.caption}
+                            </div>
+
+                            <div class="video-timestamp">${Math.floor(Math.random() * 23) + 1} jam yang lalu</div>
+                        `;
+
+                grid.appendChild(card);
+            });
+
+            initVideoPlayers();
+            initLikeButtons();
+            initCommentButtons();
+            initBookmarkButtons();
+            initDoubleTapLike();
+            initShareButtons();
+        }
+
+        // ================================================================
+        // 10. VIDEO PLAYER CONTROLS
+        // ================================================================
+        function initVideoPlayers() {
+            const videos = document.querySelectorAll('.video-wrapper video');
+
+            videos.forEach(v => {
+                const wrapper = v.closest('.video-wrapper');
+                const card = wrapper.closest('.video-instance');
+                const progressFill = document.getElementById(`progress-${v.id}`);
+                const indicator = document.getElementById(`indicator-${v.id}`);
+                const loadingOverlay = document.getElementById(`loading-${v.id}`);
+                const clickCapture = wrapper.querySelector('.click-capture');
+
+                v.addEventListener('loadeddata', () => {
+                    if (loadingOverlay) loadingOverlay.classList.add('hidden');
+                });
+
+                v.addEventListener('error', () => {
+                    if (loadingOverlay) loadingOverlay.classList.add('hidden');
+                });
+
+                clickCapture.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    if (currentPlaying && currentPlaying !== v) {
+                        currentPlaying.pause();
+                        const oldCard = currentPlaying.closest('.video-instance');
+                        if (oldCard) oldCard.classList.remove('playing');
+                    }
+
+                    if (v.paused) {
+                        v.play().catch(() => {});
+                    } else {
+                        v.pause();
+                    }
+                });
+
+                clickCapture.addEventListener('touchstart', function(e) {
+                    // Allow scroll
+                }, { passive: true });
+
+                v.addEventListener('play', () => {
+                    if (currentPlaying && currentPlaying !== v) {
+                        currentPlaying.pause();
+                        const oldCard = currentPlaying.closest('.video-instance');
+                        if (oldCard) oldCard.classList.remove('playing');
+                    }
+                    currentPlaying = v;
+                    card.classList.add('playing');
+                    indicator.innerHTML = `
+                                <svg class="icon" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                            `;
+                    indicator.className = 'play-indicator show pulse';
+                    setTimeout(() => {
+                        indicator.className = 'play-indicator';
+                    }, 700);
+                });
+
+                v.addEventListener('pause', () => {
+                    card.classList.remove('playing');
+                    indicator.innerHTML = `
+                                <svg class="icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            `;
+                    indicator.className = 'play-indicator show pulse';
+                    setTimeout(() => {
+                        indicator.className = 'play-indicator';
+                    }, 700);
+                });
+
+                v.addEventListener('ended', () => {
+                    card.classList.remove('playing');
+                    progressFill.style.width = '0%';
+                    currentPlaying = null;
+                });
+
+                v.addEventListener('timeupdate', () => {
+                    if (v.duration) {
+                        const progress = (v.currentTime / v.duration) * 100;
+                        progressFill.style.width = `${progress}%`;
+                    }
+                });
+
+                v.muted = true;
+
+                document.addEventListener('visibilitychange', () => {
+                    if (document.hidden && !v.paused) {
+                        v.pause();
+                    }
+                });
+            });
+        }
+
+        // ================================================================
+        // 11. LIKE BUTTONS - TOGGLE
+        // ================================================================
+        function initLikeButtons() {
+            document.querySelectorAll('.like-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+
+                    const id = this.dataset.id;
+                    const state = likeStates[id];
+                    const countEl = document.getElementById(`count-${id}`);
+                    const icon = this.querySelector('.icon-heart');
+                    const wrapper = this.closest('.video-instance').querySelector('.video-wrapper');
+
+                    if (state.liked) {
+                        // UNLIKE
+                        state.liked = false;
+                        state.likes--;
+
+                        this.classList.remove('liked');
+                        this.classList.add('unliked');
+                        icon.innerHTML =
+                            `<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>`;
+                        countEl.textContent = state.likes;
+
+                        const allLikes = getPersistedData(STORAGE_KEYS.LIKES, {});
+                        allLikes[id] = state.likes;
+                        setPersistedData(STORAGE_KEYS.LIKES, allLikes);
+
+                        const allLiked = getPersistedData(STORAGE_KEYS.LIKED, {});
+                        allLiked[id] = false;
+                        setPersistedData(STORAGE_KEYS.LIKED, allLiked);
+
+                        const shrink = document.createElement('div');
+                        shrink.className = 'heart-shrink';
+                        shrink.innerHTML =
+                            `<svg class="icon" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="#ed4956" stroke="#ed4956"/></svg>`;
+                        wrapper.appendChild(shrink);
+                        setTimeout(() => shrink.remove(), 500);
+
+                        showToast('Batal menyukai', 'heart_unlike');
+
+                    } else {
+                        // LIKE
+                        state.liked = true;
+                        state.likes++;
+
+                        this.classList.add('liked');
+                        this.classList.remove('unliked');
+                        icon.innerHTML =
+                            `<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="currentColor"/>`;
+                        countEl.textContent = state.likes;
+
+                        const allLikes = getPersistedData(STORAGE_KEYS.LIKES, {});
+                        allLikes[id] = state.likes;
+                        setPersistedData(STORAGE_KEYS.LIKES, allLikes);
+
+                        const allLiked = getPersistedData(STORAGE_KEYS.LIKED, {});
+                        allLiked[id] = true;
+                        setPersistedData(STORAGE_KEYS.LIKED, allLiked);
+
+                        const heart = document.createElement('div');
+                        heart.className = 'heart-burst';
+                        heart.innerHTML =
+                            `<svg class="icon" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="#ed4956" stroke="#ed4956"/></svg>`;
+                        wrapper.appendChild(heart);
+                        setTimeout(() => heart.remove(), 900);
+
+                        showToast('Disukai', 'heart');
+                    }
+                });
+            });
+        }
+
+        // ================================================================
+        // 12. COMMENT BUTTONS
+        // ================================================================
+        function initCommentButtons() {
+            document.querySelectorAll('.comment-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+
+                    const id = this.dataset.id;
+                    const state = commentStates[id];
+
+                    if (state.commented) {
+                        showToast('Sudah berkomentar sebelumnya', 'comment');
+                        return;
+                    }
+
+                    state.commented = true;
+                    state.comments++;
+
+                    this.classList.add('clicked');
+                    this.disabled = true;
+                    document.getElementById(`comment-count-${id}`).textContent = state.comments;
+
+                    const allComments = getPersistedData(STORAGE_KEYS.COMMENTS, {});
+                    allComments[id] = state.comments;
+                    setPersistedData(STORAGE_KEYS.COMMENTS, allComments);
+
+                    const allCommented = getPersistedData(STORAGE_KEYS.COMMENTED, {});
+                    allCommented[id] = true;
+                    setPersistedData(STORAGE_KEYS.COMMENTED, allCommented);
+
+                    showToast('Berhasil berkomentar', 'comment');
+                });
+            });
+        }
+
+        // ================================================================
+        // 13. DOUBLE TAP LIKE - TOGGLE
+        // ================================================================
+        function initDoubleTapLike() {
+            document.querySelectorAll('.video-wrapper').forEach(wrapper => {
+                let lastTap = 0;
+
+                wrapper.addEventListener('click', function(e) {
+                    const now = Date.now();
+                    const diff = now - lastTap;
+
+                    if (diff < 400 && diff > 0) {
+                        const card = this.closest('.video-instance');
+                        const id = card.dataset.id;
+                        const state = likeStates[id];
+                        const btn = card.querySelector('.like-btn');
+                        const countEl = document.getElementById(`count-${id}`);
+                        const icon = btn.querySelector('.icon-heart');
+
+                        if (state.liked) {
+                            state.liked = false;
+                            state.likes--;
+
+                            btn.classList.remove('liked');
+                            btn.classList.add('unliked');
+                            icon.innerHTML =
+                                `<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>`;
+                            countEl.textContent = state.likes;
+
+                            const allLikes = getPersistedData(STORAGE_KEYS.LIKES, {});
+                            allLikes[id] = state.likes;
+                            setPersistedData(STORAGE_KEYS.LIKES, allLikes);
+
+                            const allLiked = getPersistedData(STORAGE_KEYS.LIKED, {});
+                            allLiked[id] = false;
+                            setPersistedData(STORAGE_KEYS.LIKED, allLiked);
+
+                            const shrink = document.createElement('div');
+                            shrink.className = 'heart-shrink';
+                            shrink.innerHTML =
+                                `<svg class="icon" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="#ed4956" stroke="#ed4956"/></svg>`;
+                            this.appendChild(shrink);
+                            setTimeout(() => shrink.remove(), 500);
+
+                            showToast('Batal menyukai', 'heart_unlike');
+
+                        } else {
+                            state.liked = true;
+                            state.likes++;
+
+                            btn.classList.add('liked');
+                            btn.classList.remove('unliked');
+                            icon.innerHTML =
+                                `<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="currentColor"/>`;
+                            countEl.textContent = state.likes;
+
+                            const allLikes = getPersistedData(STORAGE_KEYS.LIKES, {});
+                            allLikes[id] = state.likes;
+                            setPersistedData(STORAGE_KEYS.LIKES, allLikes);
+
+                            const allLiked = getPersistedData(STORAGE_KEYS.LIKED, {});
+                            allLiked[id] = true;
+                            setPersistedData(STORAGE_KEYS.LIKED, allLiked);
+
+                            const heart = document.createElement('div');
+                            heart.className = 'heart-burst';
+                            heart.innerHTML =
+                                `<svg class="icon" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="#ed4956" stroke="#ed4956"/></svg>`;
+                            this.appendChild(heart);
+                            setTimeout(() => heart.remove(), 900);
+
+                            showToast('Disukai', 'heart');
+                        }
+                    }
+                    lastTap = now;
+                });
+            });
+        }
+
+        // ================================================================
+        // 14. BOOKMARK BUTTONS
+        // ================================================================
+        function initBookmarkButtons() {
+            document.querySelectorAll('.bookmark-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    this.classList.toggle('bookmarked');
+                    const isBookmarked = this.classList.contains('bookmarked');
+                    const icon = this.querySelector('.icon-bookmark');
+                    if (isBookmarked) {
+                        icon.innerHTML =
+                            `<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" fill="currentColor"/>`;
+                        showToast('Disimpan', 'bookmark');
+                    } else {
+                        icon.innerHTML =
+                            `<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>`;
+                        showToast('Dihapus dari simpanan', 'bookmark');
+                    }
+                });
+            });
+        }
+
+        // ================================================================
+        // 15. SHARE BUTTONS
+        // ================================================================
+        function initShareButtons() {
+            document.querySelectorAll('.share-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    if (navigator.share) {
+                        navigator.share({
+                            title: 'Scroll Post',
+                            text: 'Cek postingan ini!',
+                            url: window.location.href
+                        }).catch(() => {});
+                    } else {
+                        showToast('Link disalin ke clipboard', 'share');
+                        navigator.clipboard?.writeText(window.location.href).catch(() => {});
+                    }
+                });
+            });
+        }
+
+        // ================================================================
+        // 16. BOTTOM NAV INTERACTION
+        // ================================================================
+        function initBottomNav() {
+            const navItems = document.querySelectorAll('.bottom-nav .nav-item');
+            navItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    navItems.forEach(n => n.classList.remove('active'));
+                    this.classList.add('active');
+                    const label = this.dataset.nav || this.getAttribute('aria-label') || 'Navigasi';
+
+                    const iconMap = {
+                        'Beranda': 'home',
+                        'Cari': 'search',
+                        'Unggah DiNonAktif': 'plus',
+                        'Aktivitas': 'heart',
+                        'Profil DiNonAktif': 'profile'
+                    };
+                    const iconType = iconMap[label] || 'check';
+                    showToast(`${label}`, iconType, label);
+                });
+            });
+        }
+
+        // ================================================================
+        // 17. TOP NAV BUTTONS
+        // ================================================================
+        function initTopNav() {
+            document.getElementById('btnMessage').addEventListener('click', function() {
+                showToast('Buka pesan', 'comment', 'pesan');
+            });
+        }
+
+        // ================================================================
+        // 18. INIT
+        // ================================================================
+        renderStories();
+        renderVideos();
+        renderNotifications();
+        updateBadge();
+        initBottomNav();
+        initTopNav();
+
+        console.log('📊 Total Videos:', videoLibrary.length);
+        document.addEventListener('keydown', (e) => {
+            if (e.key === ' ' || e.key === 'Space') {
+                e.preventDefault();
+                if (currentPlaying) {
+                    currentPlaying.paused ? currentPlaying.play() : currentPlaying.pause();
+                }
+            }
+        });
+
+        // Scroll fix
+        document.body.style.overflowY = 'auto';
+        document.body.style.height = 'auto';
+        document.documentElement.style.overflowY = 'auto';
+        document.documentElement.style.height = 'auto';
+
+        if ('ontouchstart' in window) {
+            document.addEventListener('touchmove', function(e) {
+                // Allow natural scroll
+            }, { passive: true });
+        }
+
+    </script>
+
+</body>
+</html>
